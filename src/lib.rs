@@ -30,7 +30,7 @@ impl Arena {
     pub fn set(&mut self, x: usize, y: usize, tile: Tile) {
         if x < WIDTH && y < HEIGHT {
             self.data[x + y * WIDTH] = tile;
-            let bg_tile = match tile {
+            let bg_tile: u16 = match tile {
                 Tile::Empty => 1u16,
                 Tile::Snake => 0u16,
                 Tile::Food => 1u16 << 12,
@@ -54,6 +54,7 @@ struct Pos {
     y: usize,
 }
 
+#[derive(PartialEq)]
 enum Dir {
     Up,
     Down,
@@ -101,16 +102,16 @@ impl Game {
     }
 
     fn update(&mut self, key_state: &gba::KeyState) {
-        if key_state.is_triggered(gba::Key::Up) {
+        if key_state.is_triggered(gba::Key::Up) && self.dir != Dir::Down {
             self.dir = Dir::Up
         }
-        if key_state.is_triggered(gba::Key::Down) {
+        if key_state.is_triggered(gba::Key::Down) && self.dir != Dir::Up {
             self.dir = Dir::Down
         }
-        if key_state.is_triggered(gba::Key::Left) {
+        if key_state.is_triggered(gba::Key::Left) && self.dir != Dir::Right {
             self.dir = Dir::Left
         }
-        if key_state.is_triggered(gba::Key::Right) {
+        if key_state.is_triggered(gba::Key::Right) && self.dir != Dir::Left {
             self.dir = Dir::Right
         }
         self.snake[self.length].x = self.pos.x;
@@ -143,7 +144,12 @@ impl Game {
             Dir::Right => self.pos.x += 1,
         }
         match self.arena.get(self.pos.x, self.pos.y) {
-            Tile::Snake => self.reset(),
+            Tile::Snake => {
+                for _ in 0..100 {
+                    gba::wait_vblank();
+                }
+                self.reset();
+            }
             Tile::Food => {
                 self.food_count -= 1;
                 self.target_length += 5;
