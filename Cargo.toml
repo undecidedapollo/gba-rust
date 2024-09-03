@@ -13,3 +13,4 @@ lto = true
 
 [lib]
 crate-type = ["staticlib"]
+test = false

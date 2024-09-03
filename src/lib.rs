@@ -1,11 +1,10 @@
 #![no_std]
-#![feature(lang_items)]
 
 mod base;
 mod gba;
+use core::panic::PanicInfo;
 
-use base::rand::Rand;
-pub use base::rust_begin_unwind;
+use base::{load_font, rand::Rand};
 
 #[derive(Copy, Clone)]
 enum Tile {
@@ -23,7 +22,9 @@ struct Arena {
 
 impl Arena {
     pub fn new() -> Arena {
-        Arena { data: [Tile::Empty; WIDTH * HEIGHT] }
+        Arena {
+            data: [Tile::Empty; WIDTH * HEIGHT],
+        }
     }
 
     pub fn set(&mut self, x: usize, y: usize, tile: Tile) {

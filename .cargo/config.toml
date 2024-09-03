@@ -1,0 +1,17 @@
+# [target.xtensa-esp32s3-none-elf]
+# runner = "espflash flash --monitor"
+# runner = "probe-rs run --chip esp32s3"
+
+# [env]
+# ESP_LOGLEVEL="INFO"
+
+[build]
+# rustflags = [
+#   "-C", "link-arg=-nostartfiles",
+#   "-C", "link-arg=-Tlinkall.x",
+#   "-C", "link-arg=-Trom_functions.x",
+# ]
+target = "armv4t-none-eabi"
+
+[unstable]
+build-std = ["core"]

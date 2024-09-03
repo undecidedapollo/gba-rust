@@ -2,8 +2,8 @@ use core::fmt::{write, Error, Write};
 use core::panic::PanicInfo;
 use gba;
 
-#[lang = "eh_personality"]
-pub extern "C" fn rust_eh_personality() {}
+// #[lang = "eh_personality"]
+// pub extern "C" fn rust_eh_personality() {}
 
 struct BgWriter(u32);
 
@@ -23,9 +23,22 @@ impl Write for BgWriter {
     }
 }
 
-#[no_mangle]
+pub fn load_font(offset: u32) {
+    let font = include_bytes!("font.bin");
+    for (index, byte) in font.iter().enumerate() {
+        let mut line = 0u32;
+        for bit in 0..7 {
+            if (byte & (1 << bit)) != 0 {
+                line |= 15 << (bit * 4);
+            }
+        }
+        gba::hw::write_vram16(offset + index as u32 * 2, (line & 0xffff) as u16);
+        gba::hw::write_vram16(offset + index as u32 * 2 + 1, (line >> 16) as u16);
+    }
+}
+
 #[panic_handler]
-pub extern "C" fn rust_begin_unwind(info: &PanicInfo) -> ! {
+pub fn panic(info: &PanicInfo) -> ! {
     let (line, file) = if let Some(location) = info.location() {
         (location.line(), location.file())
     } else {
@@ -42,25 +55,14 @@ pub extern "C" fn rust_begin_unwind(info: &PanicInfo) -> ! {
         gba::hw::write_vram16(0x800 + i, 0);
     }
     let mut writer = BgWriter(0x800);
-    write(
-        &mut writer,
-        format_args!("Panic in line {} of\n{}\n\n{}", line, file, msg),
-    ).unwrap();
-    loop {}
-}
 
-pub fn load_font(offset: u32) {
-    let font = include_bytes!("font.bin");
-    for (index, byte) in font.iter().enumerate() {
-        let mut line = 0u32;
-        for bit in 0..7 {
-            if (byte & (1 << bit)) != 0 {
-                line |= 15 << (bit * 4);
-            }
-        }
-        gba::hw::write_vram16(offset + index as u32 * 2, (line & 0xffff) as u16);
-        gba::hw::write_vram16(offset + index as u32 * 2 + 1, (line >> 16) as u16);
-    }
+    write!(
+        &mut writer,
+        "Panic in line {} of\n{}\n\n{}",
+        line, file, msg
+    )
+    .unwrap();
+    loop {}
 }
 
 #[allow(dead_code)]
